@@ -21,6 +21,11 @@ struct GeneralSettingsTab: View {
                 }
 
             Toggle("Show notification on switch", isOn: $manager.showsNotification)
+
+            Section {} footer: {
+                Link("GitHub", destination: URL(string: "https://github.com/alisheryeginbay/kawaru")!)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
         }
         .formStyle(.grouped)
     }
