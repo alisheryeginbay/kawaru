@@ -23,8 +23,13 @@ struct GeneralSettingsTab: View {
             Toggle("Show notification on switch", isOn: $manager.showsNotification)
 
             Section {} footer: {
-                Link("GitHub", destination: URL(string: "https://github.com/alisheryeginbay/kawaru")!)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                VStack(spacing: 4) {
+                    if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                        Text("Kawaru v\(version)")
+                    }
+                    Link("GitHub", destination: URL(string: "https://github.com/alisheryeginbay/kawaru")!)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .formStyle(.grouped)
