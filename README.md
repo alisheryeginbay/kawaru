@@ -30,7 +30,7 @@ Open `kawaru.xcodeproj` in Xcode 26 and build. The single dependency ([KeyboardS
 
 ## Known Limitations
 
-- `TISSelectInputSource` has a known Carbon bug with some CJKV input methods
+- The temporary-window workaround for CJKV input methods adds ~50ms of overhead per switch
 
 ## Credits
 

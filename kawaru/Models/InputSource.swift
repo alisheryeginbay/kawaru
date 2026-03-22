@@ -43,11 +43,51 @@ struct InputSource: Identifiable, Hashable {
         return InputSource(id: id, name: name, icon: loadIcon(for: tis), tisSource: tis)
     }
 
+    /// Whether this source is a CJKV input method that needs the temporary-window workaround.
+    var isCJKV: Bool {
+        guard id.contains("inputmethod") else { return false }
+        guard let raw = TISGetInputSourceProperty(tisSource, kTISPropertyInputSourceLanguages),
+              let languages = Unmanaged<CFArray>.fromOpaque(raw).takeUnretainedValue() as? [String],
+              let primary = languages.first
+        else {
+            return false
+        }
+        return primary == "ko" || primary == "ja" || primary == "vi" || primary.hasPrefix("zh")
+    }
+
     // MARK: - Selection
 
     @discardableResult
     func select() -> Bool {
-        TISSelectInputSource(tisSource) == noErr
+        guard TISSelectInputSource(tisSource) == noErr else { return false }
+        if isCJKV {
+            Self.refreshInputSourceWithTemporaryWindow()
+        }
+        return true
+    }
+
+    /// Work around a macOS Carbon bug where `TISSelectInputSource` updates the menu bar
+    /// but doesn't actually activate CJKV input methods in the focused app.
+    /// Creating a temporary key window forces macOS to re-query the active input source.
+    private static func refreshInputSourceWithTemporaryWindow() {
+        let previousApp = NSWorkspace.shared.frontmostApplication
+
+        let window = NSWindow(
+            contentRect: NSRect(x: -9999, y: -9999, width: 1, height: 1),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 1, height: 1))
+        window.contentView = textView
+        window.makeKeyAndOrderFront(nil)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            window.close()
+            if let app = previousApp {
+                app.activate()
+            }
+        }
     }
 
     // MARK: - Hashable
