@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-26
     env:
       SCHEME: kawaru
       PROJECT: kawaru.xcodeproj
@@ -46,6 +46,7 @@ jobs:
             -arch arm64 -arch x86_64 \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             MARKETING_VERSION="$VERSION" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             clean build
