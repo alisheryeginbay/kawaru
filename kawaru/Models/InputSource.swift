@@ -66,24 +66,32 @@ struct InputSource: Identifiable, Hashable {
         return true
     }
 
-    /// Work around a macOS Carbon bug where `TISSelectInputSource` updates the menu bar
-    /// but doesn't actually activate CJKV input methods in the focused app.
-    /// Creating a temporary key window forces macOS to re-query the active input source.
-    private static func refreshInputSourceWithTemporaryWindow() {
-        let previousApp = NSWorkspace.shared.frontmostApplication
-
+    /// Reusable off-screen window for the CJKV workaround.
+    /// Kept as a static to avoid repeated allocation and animation-related crashes on dealloc.
+    private static let helperWindow: NSWindow = {
         let window = NSWindow(
             contentRect: NSRect(x: -9999, y: -9999, width: 1, height: 1),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
         )
-        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 1, height: 1))
-        window.contentView = textView
-        window.makeKeyAndOrderFront(nil)
+        window.animationBehavior = .none
+        window.contentView = NSTextView(frame: NSRect(x: 0, y: 0, width: 1, height: 1))
+        return window
+    }()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            window.close()
+    /// Work around a macOS Carbon bug where `TISSelectInputSource` updates the menu bar
+    /// but doesn't actually activate CJKV input methods in the focused app.
+    /// Creating a temporary key window forces macOS to re-query the active input source.
+    private static func refreshInputSourceWithTemporaryWindow() {
+        let previousApp = NSWorkspace.shared.frontmostApplication
+
+        NSApp.activate()
+        helperWindow.makeKeyAndOrderFront(nil)
+        helperWindow.makeFirstResponder(helperWindow.contentView)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            helperWindow.orderOut(nil)
             if let app = previousApp {
                 app.activate()
             }
