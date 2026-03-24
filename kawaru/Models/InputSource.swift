@@ -98,7 +98,7 @@ struct InputSource: Identifiable, Hashable {
         helperWindow.makeKeyAndOrderFront(nil)
         helperWindow.makeFirstResponder(helperWindow.contentView)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        DispatchQueue.main.async {
             helperWindow.orderOut(nil)
             if let app = previousApp {
                 app.activate()
