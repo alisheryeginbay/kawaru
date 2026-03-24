@@ -1,6 +1,12 @@
 import AppKit
 import Carbon
 
+/// Borderless windows return `false` from `canBecomeKey` by default,
+/// which prevents the CJKV helper window from reliably becoming the key window.
+private final class KeyableWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+}
+
 @MainActor
 struct InputSource: Identifiable, Hashable {
     let id: String
@@ -59,8 +65,9 @@ struct InputSource: Identifiable, Hashable {
 
     @discardableResult
     func select() -> Bool {
+        let wasCJKV = InputSource.current()?.isCJKV ?? false
         guard TISSelectInputSource(tisSource) == noErr else { return false }
-        if isCJKV {
+        if isCJKV || wasCJKV {
             Self.refreshInputSourceWithTemporaryWindow()
         }
         return true
@@ -69,7 +76,7 @@ struct InputSource: Identifiable, Hashable {
     /// Reusable off-screen window for the CJKV workaround.
     /// Kept as a static to avoid repeated allocation and animation-related crashes on dealloc.
     private static let helperWindow: NSWindow = {
-        let window = NSWindow(
+        let window = KeyableWindow(
             contentRect: NSRect(x: -9999, y: -9999, width: 1, height: 1),
             styleMask: [.borderless],
             backing: .buffered,
