@@ -76,6 +76,7 @@ struct InputSource: Identifiable, Hashable {
             defer: false
         )
         window.animationBehavior = .none
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary]
         window.contentView = NSTextView(frame: NSRect(x: 0, y: 0, width: 1, height: 1))
         return window
     }()
